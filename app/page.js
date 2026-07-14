@@ -1,14 +1,15 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import ProductGrid from "./components/ProductGrid";
+import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
 
 export default function Home() {
   const [products, setProducts] = useState([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
-
-  const addToCart = (product) => {
-    console.log("Added to cart:", product.title);
-  };
+  const { addToCart } = useCart();
+  const { wishlistItems } = useWishlist();
 
   const normalizeProducts = (data) => {
     if (Array.isArray(data)) return data;
@@ -35,12 +36,12 @@ export default function Home() {
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!query.trim()) return;
-    
+
     setLoading(true);
     const res = await fetch("/api/ai-search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query })
+      body: JSON.stringify({ query }),
     });
     const data = await res.json();
     setProducts(normalizeProducts(data));
@@ -48,51 +49,55 @@ export default function Home() {
   };
 
   return (
-    <main className="max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-center">AI Powered E-Commerce</h1>
-      
-      {/* Search Input UI */}
-      <form onSubmit={handleSearch} className="flex gap-2 max-w-md mx-auto mb-8">
-        <input
-          type="text"
-          placeholder="Describe what you want (e.g., 'something comfy to run in')"
-          className="border border-slate-300 p-2 rounded w-full bg-white text-black"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <button type="submit" className="bg-slate-800 text-white px-4 py-2 rounded font-medium hover:bg-slate-700">
-          Search
-        </button>
-      </form>
+    <main className="max-w-6xl mx-auto px-4 py-10">
+      <section className="mb-10 rounded-3xl bg-slate-950 px-6 py-10 text-white shadow-xl shadow-slate-950/20 sm:px-10">
+        <div className="grid gap-8 lg:grid-cols-[1.25fr_0.85fr] lg:items-center">
+          <div className="space-y-6">
+            <p className="text-sm uppercase tracking-[0.3em] text-amber-300">AI-powered shopping</p>
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+              Search smarter and shop faster with vector-powered product matching.
+            </h1>
+            <p className="max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+              Get recommendations tailored by semantic search, build your wishlist, and manage your cart with a modern storefront UI.
+            </p>
+          </div>
 
-      {/* Catalog Render Grid */}
-      {loading ? (
-        <p className="text-center text-gray-500">Loading products...</p>
-      ) : products.length === 0 ? (
-        <p className="text-center text-gray-500">No products found.</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {products.map((product) => (
-            <div key={product._id} className="border border-slate-200 rounded p-4 flex flex-col justify-between cursor-pointer">
-              <div>
-                <img src={product.image} alt={product.title} className="w-full h-48 object-cover rounded mb-4" />
-                <h2 className="font-semibold text-lg mb-1">{product.title}</h2>
-                <p className="text-sm text-gray-600 mb-2">{product.description}</p>
-                <span className="inline-block bg-slate-100 text-xs px-2 py-1 rounded mb-4 font-mono">{product.category}</span>
-              </div>
-              <div>
-                <div className="text-xl font-bold mb-2">${product.price}</div>
-                <button 
-                  onClick={() => addToCart(product)} 
-                  className="w-full bg-slate-900 text-white py-2 rounded hover:bg-slate-800 text-sm font-medium"
-                >
-                  Add to Cart
-                </button>
-              </div>
-            </div>
-          ))}
+          <div className="rounded-[2rem] bg-slate-900 p-7 shadow-2xl shadow-slate-950/20 sm:p-10">
+            <p className="mb-4 text-sm text-amber-400">Wishlist items</p>
+            <p className="text-5xl font-bold text-white">{wishlistItems.length}</p>
+            <p className="mt-3 text-sm leading-6 text-slate-400">
+              Keep track of favorites and add them to your cart later.
+            </p>
+          </div>
         </div>
-      )}
+      </section>
+
+      <section className="mb-10 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <form onSubmit={handleSearch} className="flex flex-col gap-3 sm:flex-row">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search for products like dinner sets, running shoes, or earbuds"
+            className="min-w-0 flex-1 rounded-3xl border border-slate-300 bg-slate-50 px-5 py-4 text-slate-900 outline-none focus:border-slate-800 focus:ring-2 focus:ring-amber-300"
+          />
+          <button
+            type="submit"
+            className="rounded-3xl bg-slate-950 px-6 py-4 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
+            Search
+          </button>
+        </form>
+      </section>
+
+      <section className="space-y-8">
+        {loading ? (
+          <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center text-slate-600 shadow-sm">Loading products...</div>
+        ) : products.length === 0 ? (
+          <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center text-slate-600 shadow-sm">No products found. Try another search or browse the catalog.</div>
+        ) : (
+          <ProductGrid products={products} />
+        )}
+      </section>
     </main>
   );
 }
